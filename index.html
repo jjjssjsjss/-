@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전기기사 필기 11주 합격 트래커</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel for JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <div id="root" class="flex-grow flex flex-col"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        // 전기기사 11주 마일스톤 데이터 정의
+        const INITIAL_WEEKS_DATA = [
+            {
+                id: 1,
+                phase: 1,
+                phaseName: "1단계: 치트키 기본서 이론",
+                weekTitle: "1주차: 회로이론 & 제어공학 기초",
+                range: "p.4 ~ p.139",
+                days: [
+                    { id: "w1-d1", name: "월요일 (1일차)", title: "회로 PART 01~02 (p.4~11)", topics: ["옴의 법칙", "키르히호프의 법칙", "저항의 직·병렬 연결", "휘스톤 브리지", "정현파교류 표현"], completed: false, notes: "" },
+                    { id: "w1-d2", name: "화요일 (2일차)", title: "회로 PART 03~05 (p.12~27)", topics: ["실훗값, 평균값, 파고율, 파형률", "R-L-C 직렬/병렬 임피던스", "교류 전력 계산", "인덕턴스의 접속"], completed: false, notes: "" },
+                    { id: "w1-d3", name: "수요일 (3일차)", title: "회로 PART 06~08 (p.28~50)", topics: ["평형 3상 교류", "Y 결선, 델타 결선 및 V결선", "2전력계법", "대칭좌표법 및 불평형률"], completed: false, notes: "" },
+                    { id: "w1-d4", name: "목요일 (4일차)", title: "제어 PART 01~04 (p.118~139)", topics: ["폐회로 제어계 구성", "자동제어계의 분류", "블록선도와 신호흐름선도", "특성방정식 & 루스 안정도 판별법"], completed: false, notes: "" },
+                    { id: "w1-d5", name: "금요일 (5일차)", title: "1주차 전체 이론 복습 (리뷰 데이)", topics: ["1주차 전체 분량 (p.4~139) 속독 복습", "헷갈리는 공식 포스트잇 표기하기", "손목 무리 없이 눈으로 다회독"], completed: false, notes: "" },
+                ]
+            },
+            {
+                id: 2,
+                phase: 1,
+                phaseName: "1단계: 치트키 기본서 이론",
+                weekTitle: "2주차: 제어공학 완성 & 전기자기학 기초",
+                range: "p.140 ~ p.205 & p.78 ~ p.117",
+                days: [
+                    { id: "w2-d1", name: "월요일 (6일차)", title: "제어 PART 05~09 (p.140~180)", topics: ["2차 지연 제어계 및 과도 응답", "정상 편차 및 주파수 전달함수", "나이퀴스트 안정도 판별법", "보드선도 판별법"], completed: false, notes: "" },
+                    { id: "w2-d2", name: "화요일 (7일차)", title: "제어 PART 10~11 (p.181~205)", topics: ["근궤적의 개요 및 가지수", "상태공간법 시스템 행렬", "z변환 및 최종값 정리", "시퀀스제어(AND, OR, NOT)"], completed: false, notes: "" },
+                    { id: "w2-d3", name: "수요일 (8일차)", title: "자기학 PART 01~03 (p.78~93)", topics: ["벡터와 스칼라", "쿨롱의 힘 & 전계의 세기", "전위 계산", "가우스 정리 & 전속밀도"], completed: false, notes: "" },
+                    { id: "w2-d4", name: "목요일 (9일차)", title: "자기학 PART 04~06 (p.94~117)", topics: ["정전용량(콘덴서 연결)", "도체계의 에너지와 힘", "전기 분극 & 유전체의 완전경계 조건", "맥스웰 응력"], completed: false, notes: "" },
+                    { id: "w2-d5", name: "금요일 (10일차)", title: "2주차 전체 이론 복습 (리뷰 데이)", topics: ["제어공학 전체 범위 리마인드", "전기자기학 전반부 핵심 공식 눈도장", "취약 유형 포스트잇 표시"], completed: false, notes: "" },
+                ]
+            },
+            {
+                id: 3,
+                phase: 1,
+                phaseName: "1단계: 치트키 기본서 이론",
+                weekTitle: "3주차: 전기기기 단기 정복",
+                range: "p.210 ~ p.295",
+                days: [
+                    { id: "w3-d1", name: "월요일 (11일차)", title: "기기 PART 01~03 (p.210~227)", topics: ["직류기 구조 및 발전원리", "전기자 권선법", "유기기전력 공식", "전기자 반작용과 정류 작용"], completed: false, notes: "" },
+                    { id: "w3-d2", name: "화요일 (12일차)", title: "기기 PART 04~06 (p.228~240)", topics: ["동기기 구조와 전기자 반작용", "동기발전기 출력", "동기임피던스 및 단락비", "전압변동률"], completed: false, notes: "" },
+                    { id: "w3-d3", name: "수요일 (13일차)", title: "기기 PART 07~10 (p.241~265)", topics: ["변압기 구조 & 등가회로", "무부하시험 & 단락시험", "%임피던스 강하", "3상 결선(Y-Y, Delta-Delta, V-V)"], completed: false, notes: "" },
+                    { id: "w3-d4", name: "목요일 (14일차)", title: "기기 PART 11~15 (p.266~295)", topics: ["유도전동기 슬립 공식", "권선형 유도전동기 전력변환", "유도기 기동방법 및 속도제어", "정류기 반도체 소자 & SCR 위상제어"], completed: false, notes: "" },
+                    { id: "w3-d5", name: "금요일 (15일차)", title: "3주차 전기기기 전체 복습 (리뷰 데이)", topics: ["기기 발전기/전동기 공식 차이 비교", "변압기 효율 및 결선 특징 정리", "눈으로 수치와 기호 반복 각인"], completed: false, notes: "" },
+                ]
+            },
+            {
+                id: 4,
+                phase: 1,
+                phaseName: "1단계: 치트키 기본서 이론",
+                weekTitle: "4주차: 전력공학 & 전기설비기술기준(KEC)",
+                range: "p.296 ~ p.435",
+                days: [
+                    { id: "w4-d1", name: "월요일 (16일차)", title: "전력 PART 01~03 (p.296~313)", topics: ["전선로 전선의 길이와 이도", "단도체와 복도체의 특징", "코로나 현상 및 임계전압", "선로정수(L, C)와 충전용량"], completed: false, notes: "" },
+                    { id: "w4-d2", name: "화요일 (17일차)", title: "전력 PART 04~07 (p.314~340)", topics: ["송전선로 전압강하와 전력손실", "조상설비와 전력용 콘덴서", "고장계산(%임피던스, 단락사고)", "중성점 접지방식(직접, 소호리액터)"], completed: false, notes: "" },
+                    { id: "w4-d3", name: "수요일 (18일차)", title: "전력 PART 08~12 & 설비 PART 01~02 (p.341~385)", topics: ["배전방식(수지식, 루프식, 네트워크식)", "발전공학(수력, 화력 발전 개념)", "KEC 총칙(전압의 구분, 절연저항)", "가공전선로 높이 규정"], completed: false, notes: "" },
+                    { id: "w4-d4", name: "목요일 (19일차)", title: "설비 PART 03~09 (p.386~435)", topics: ["지지물의 안전율과 지선 규정", "옥내배선공사(합성수지관, 금속관, 케이블트레이)", "접지시스템 규정", "전기철도 및 분산형 전원"], completed: false, notes: "" },
+                    { id: "w4-d5", name: "금요일 (20일차)", title: "4주차 전력공학 & KEC 전체 복습 (리뷰 데이)", topics: ["KEC 이격거리 및 높이 수치 집중 암기", "전력공학 고장해석 핵심 요점 확인", "470페이지 이론서 1회독 완독 달성!"], completed: false, notes: "" },
+                ]
+            },
+            {
+                id: 5,
+                phase: 2,
+                phaseName: "2단계: 타우(τ) 유형별 핵심 풀이",
+                weekTitle: "5주차: 회로이론 & 제어공학 유형 정복",
+                range: "타우 회로이론 & 제어공학",
+                days: [
+                    { id: "w5-d1", name: "월요일 (21일차)", title: "회로이론 A등급 유형 풀이 (001~035)", topics: ["기초 전기 이론(옴, 키르히호프)", "정현파 교류 실훗값/평균값", "RLC 직병렬 임피던스 유형 풀이"], completed: false, notes: "" },
+                    { id: "w5-d2", name: "화요일 (22일차)", title: "회로이론 A등급(036~070) & B등급 핵심", topics: ["대칭 좌표법 및 불평형률 계산", "비정현파 왜형률 및 실훗값 계산", "4단자 정수 매트릭스 및 라플라스 변환"], completed: false, notes: "" },
+                    { id: "w5-d3", name: "수요일 (23일차)", title: "제어공학 A등급 유형 풀이 (001~020)", topics: ["폐회로 제어계 피드백 이득", "블록선도 단순화 및 신호흐름선도 공식", "특성방정식 근 구하기 및 루스 판별법"], completed: false, notes: "" },
+                    { id: "w5-d4", name: "목요일 (24일차)", title: "제어공학 A등급(021~041) & B등급 핵심", topics: ["나이퀴스트 선도 해석", "보드선도 이득여유 및 위상여유", "근궤적 범위 및 상태 방정식 상태천이행렬"], completed: false, notes: "" },
+                    { id: "w5-d5", name: "금요일 (25일차)", title: "회로/제어 오답 노트 확인 (리뷰 데이)", topics: ["틀린 문제 유형 확인", "교재 우측의 '핵심 요약' 가볍게 복습", "치트키 기본서 역방향 매칭 확인"], completed: false, notes: "" },
+                ]
+            },
+            {
+                id: 6,
+                phase: 2,
+                phaseName: "2단계: 타우(τ) 유형별 핵심 풀이",
+                weekTitle: "6주차: 전기자기학 유형 정복",
+                range: "타우 전기자기학",
+                days: [
+                    { id: "w6-d1", name: "월요일 (26일차)", title: "전기자기학 A등급 유형 (001~030)", topics: ["벡터의 외적과 내적", "쿨롱의 법칙과 전계 세기 구하기", "가우스 법칙과 무한 평판 전하 해석"], completed: false, notes: "" },
+                    { id: "w6-d2", name: "화요일 (27일차)", title: "전기자기학 A등급 유형 (031~060)", topics: ["정전용량 식 계산(평행판, 동심구, 원통)", "유전체 경계 조건과 굴절률", "전도전류와 변위전류 공식 매칭"], completed: false, notes: "" },
+                    { id: "w6-d3", name: "수요일 (28일차)", title: "전기자기학 A등급 유형 (061~087)", topics: ["정자계 앙페르 법칙 & 비오사바르 법칙", "자성체의 경계 조건 및 히스테리시스 루프", "패러데이 전자유도와 자기인덕턴스"], completed: false, notes: "" },
+                    { id: "w6-d4", name: "목요일 (29일차)", title: "전기자기학 B등급 전체 핵심 문항 풀이", topics: ["중화 현상 및 전기 영상법 응용", "전자기장 맥스웰 방정식의 물리적 의미 정독", "전자파 진행 속도 및 포인팅 벡터"], completed: false, notes: "" },
+                    { id: "w6-d5", name: "금요일 (30일차)", title: "자기학 오답 유형 눈도장 (리뷰 데이)", topics: ["자주 헷갈리는 상수값($\epsilon_0, \mu_0$) 리마인드", "틀린 수식 눈으로 풀이 흐름 재추적", "절대 쓰지 않고 흐름 기억하기"], completed: false, notes: "" },
+                ]
+            },
+            {
+                id: 7,
+                phase: 2,
+                phaseName: "2단계: 타우(τ) 유형별 핵심 풀이",
+                weekTitle: "7주차: 전기기기 유형 정복",
+                range: "타우 전기기기",
+                days: [
+                    { id: "w7-d1", name: "월요일 (31일차)", title: "전기기기 A등급 유형 (001~030)", topics: ["직류기 발전기 기전력 유도 및 전기자반작용", "직류전동기 토크-속도 계산", "동기기 동기 임피던스와 단락비"], completed: false, notes: "" },
+                    { id: "w7-d2", name: "화요일 (32일차)", title: "전기기기 A등급 유형 (031~060)", topics: ["동기전동기 V곡선 위상특성", "변압기 무부하시험과 단락시험 데이터 분석", "%임피던스 강하와 전압변동률 계산"], completed: false, notes: "" },
+                    { id: "w7-d3", name: "수요일 (33일차)", title: "전기기기 A등급 유형 (061~087)", topics: ["변압기 결선(Delta-Delta, V-V) 부하용량", "유도전동기 슬립과 2차 동손 비율", "유도기 기동법(Y-Delta, 기동보상기)"], completed: false, notes: "" },
+                    { id: "w7-d4", name: "목요일 (34일차)", title: "전기기기 B등급 전체 핵심 문항 풀이", topics: ["특수 전동기(서보모터, 스텝모터) 구조 특징", "정류 소자의 역방향 전압 보호 계산", "단상 정류자 전동기 특성"], completed: false, notes: "" },
+                    { id: "w7-d5", name: "금요일 (35일차)", title: "전기기기 오답 가볍게 속독 (리뷰 데이)", topics: ["변압기 무부하시험과 단락시험 구별법 암기", "유도전동기 비례추이 특징 핵심 리마인드", "포스트잇 표시 누적 정리"], completed: false, notes: "" },
+                ]
+            },
+            {
+                id: 8,
+                phase: 2,
+                phaseName: "2단계: 타우(τ) 유형별 핵심 풀이",
+                weekTitle: "8주차: 전력공학 유형 정복",
+                range: "타우 전력공학",
+                days: [
+                    { id: "w8-d1", name: "월요일 (36일차)", title: "전력공학 A등급 유형 (001~035)", topics: ["전선의 이도(Dip) 계산 공식", "코로나 임계전압 향상 대책", "선로 임피던스 및 정전용량 3상 대칭 계산"], completed: false, notes: "" },
+                    { id: "w8-d2", name: "화요일 (37일차)", title: "전력공학 A등급 유형 (036~070)", topics: ["송전선로 전압강하율 계산", "조상설비(동기조상기, 콘덴서, 리액터) 비교", "고장해석(%Z 대입 및 단락용량 계산)"], completed: false, notes: "" },
+                    { id: "w8-d3", name: "수요일 (38일차)", title: "전력공학 A등급 유형 (071~102)", topics: ["중성점 접지방식 비교(비접지 vs 직접 vs 소호)", "이상전압 가공지선, 매설지선, 피뢰기 설치", "배전방식 망상(Network), 루프식 특징"], completed: false, notes: "" },
+                    { id: "w8-d4", name: "목요일 (39일차)", title: "전력공학 B등급 전체 핵심 문항 풀이", topics: ["화력발전 열사이클 및 열효율 공식 대입", "수력발전기 출력식(P=9.8QH)", "원자로 원리 및 제어봉 종류"], completed: false, notes: "" },
+                    { id: "w8-d5", name: "금요일 (40일차)", title: "전력공학 단골 오답 체크 (리뷰 데이)", topics: ["전동기 역률개선용 콘덴서 용량 구하는 법 정독", "안정도 한계식과 조속기 역할 정리", "실무 연동 수치 암기 상태 점검"], completed: false, notes: "" },
+                ]
+            },
+            {
+                id: 9,
+                phase: 2,
+                phaseName: "2단계: 타우(τ) 유형별 핵심 풀이",
+                weekTitle: "9주차: 전기설비기술기준(KEC) 유형 정복",
+                range: "타우 전기설비기술기준",
+                days: [
+                    { id: "w9-d1", name: "월요일 (41일차)", title: "KEC A등급 유형 (001~050)", topics: ["가공전선 도로, 철도, 횡단보도교 높이", "전력선과 통신선 사이의 이격거리 규칙", "절연내력시험 시험전압 배수 암기"], completed: false, notes: "" },
+                    { id: "w9-d2", name: "화요일 (42일차)", title: "KEC A등급 유형 (051~098)", topics: ["접지시스템(계통, 보호, 피뢰접지) 및 접지선 굵기", "저압 옥내배선 금속관, 합성수지관, 케이블 배선 규칙", "과전류차단기 및 누전차단기 시설 규칙"], completed: false, notes: "" },
+                    { id: "w9-d3", name: "수요일 (43일차)", title: "KEC B등급 전체 핵심 문항 암기", topics: ["특고압 가공전선 지지물 보안공사 안전율", "지지선의 연선 꼬임 개수 및 최소 굵기 수치", "전기철도 급전선 및 보호망 규정"], completed: false, notes: "" },
+                    { id: "w9-d4", name: "목요일 (44일차)", title: "전과목 틀린 유형 포스트잇 속독 회독", topics: ["타우 오답 중 체크 표시 집중 정독", "1주차~8주차까지 틀렸던 회로/자기학 수식 복습", "절대 풀지 말고 풀이 전개 논리를 읽기"], completed: false, notes: "" },
+                    { id: "w9-d5", name: "금요일 (45일차)", title: "KEC 최종 수치 암기 & 마무리 (리뷰 데이)", topics: ["가공전선 높이/이격거리 최종 요약표 작성", "KEC 과목 과락 방지를 위한 안전장치 암기", "타우 2회독 완료 선언!"], completed: false, notes: "" },
+                ]
+            },
+            {
+                id: 10,
+                phase: 3,
+                phaseName: "3단계: 모의고사 및 실전 CBT 트레이닝",
+                weekTitle: "10주차: 모의고사 1~3단계 (A/B등급 마스터)",
+                range: "모의고사집 제1회 ~ 제3회",
+                days: [
+                    { id: "w10-d1", name: "월요일 (46일차)", title: "제1회 모의고사 풀이 (A등급 문항)", topics: ["난이도 하, 100문제 연속 풀이", "중간에 멈추지 않고 푸는 CBT 실전 감각 기르기", "정답 확인하지 않고 일단 100문항 다 풀기"], completed: false, notes: "" },
+                    { id: "w10-d2", name: "화요일 (47일차)", title: "1회 오답 복습 및 제2회 모의고사 풀이", topics: ["1회 오답 문항을 타우 유형집에서 찾아 역방향 복습", "제2회 모의고사 (A등급 100문항, 난이도 하) 실전 풀이", "아직 B/C등급에 미련 갖지 말기"], completed: false, notes: "" },
+                    { id: "w10-d3", name: "수요일 (48일차)", title: "제3회 모의고사 풀이 (A/B등급 혼합)", topics: ["난이도 중, A/B등급이 섞인 완벽한 기출 형태", "과목별 20분 타이머 설정 후 풀이", "실제 시험처럼 집중"], completed: false, notes: "" },
+                    { id: "w10-d4", name: "목요일 (49일차)", title: "3회 오답 심층 피드백 & 핵심공식 모음(p.207)", topics: ["3회 모의고사 중 틀린 문제 집중 분석", "치트키 교재 부록 '공식 모음' 207페이지 정독", "자주 실수하는 복소수법 계산기 사용법 리체크"], completed: false, notes: "" },
+                    { id: "w10-d5", name: "금요일 (50일차)", title: "1~3회 모의고사 약점 과목 재보충 (리뷰 데이)", topics: ["과락 우려 과목(평균 50점 이하)의 타우 핵심 재확독", "자기학 공식 완벽 매칭 체크", "공식만 눈으로 쓰기"], completed: false, notes: "" },
+                ]
+            },
+            {
+                id: 11,
+                phase: 3,
+                phaseName: "3단계: 모의고사 및 실전 CBT 트레이닝",
+                weekTitle: "11주차: 모의고사 4~5단계 및 최종 마킹 (시험 주간)",
+                range: "모의고사집 제4회 ~ 제6회 & 시험",
+                days: [
+                    { id: "w11-d1", name: "월요일 (51일차)", title: "제4회 모의고사 풀이 (A+B등급)", topics: ["난이도 중, 100문항 150분 모의 타임어택", "모르는 계산 문제 과감하게 찍고 넘어가는 시간 절약법 연습", "전체 과목 평균 점수 분석"], completed: false, notes: "" },
+                    { id: "w11-d2", name: "화요일 (52일차)", title: "제5회 모의고사 풀이 (A+B+C등급)", topics: ["난이도 상, 지엽적인 C등급까지 포함된 실전형 시험", "지엽적인 C등급에 멘탈 흔들리지 않기", "합격 기준인 60점 이상 확보에만 초점"], completed: false, notes: "" },
+                    { id: "w11-d3", name: "수요일 (53일차)", title: "제6회 모의고사 풀이 & 최종 실전 감각 극대화", topics: ["마지막 난이도 상 모의고사 완수", "실제 CBT 컴퓨터 마킹 화면을 연상하며 연습", "오답은 무조건 해설 속독"], completed: false, notes: "" },
+                    { id: "w11-d4", name: "목요일 (54일차)", title: "핵심 공식 최종 리마인드 (D-2)", topics: ["핵심공식 전체 독파", "KEC 가공전선 이격거리 최종 머릿속 스케치", "과년도 오답 포스트잇 최종 회독"], completed: false, notes: "" },
+                    { id: "w11-d5", name: "금요일 (55일차)", title: "손목 휴식 및 최종 멘탈 관리 (D-1)", topics: ["필기는 전면 금지하고 눈으로만 가볍게 회독", "준비물(수험표, 신분증, 공학용 계산기) 챙기기", "마지막 꿀잠으로 뇌 리프레시하기"], completed: false, notes: "" },
+                ]
+            }
+        ];
+
+        function App() {
+            // 상태 정의
+            const [weeks, setWeeks] = useState(() => {
+                return INITIAL_WEEKS_DATA;
+            });
+            const [selectedPhase, setSelectedPhase] = useState("all"); // 'all', '1', '2', '3'
+            const [selectedWeek, setSelectedWeek] = useState(1);
+            const [selectedDayId, setSelectedDayId] = useState("w1-d1");
+            const [activeTab, setActiveTab] = useState("tracker"); // 'tracker', 'scratchpad'
+            const [scratchpadText, setScratchpadText] = useState("");
+            
+            // 토스트 알림 메시지 상태 (alert 대체용)
+            const [toast, setToast] = useState({ show: false, message: "", type: "info" });
+
+            // 8월 8일 시험 디데이 계산 (2026-05-24 기준)
+            const dDayText = useMemo(() => {
+                const examDate = new Date("2026-08-08T00:00:00");
+                const currentDate = new Date("2026-05-24T14:50:00"); 
+                const diffTime = examDate - currentDate;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays > 0 ? `D-${diffDays}` : diffDays === 0 ? "D-Day! 화이팅!" : `시험 종료`;
+            }, []);
+
+            // 토스트 알림 트리거 함수
+            const showToast = (message, type = "info") => {
+                setToast({ show: true, message, type });
+                setTimeout(() => {
+                    setToast({ show: false, message: "", type: "info" });
+                }, 3000);
+            };
+
+            // 진도 저장하기 (JSON 다운로드)
+            const exportProgress = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(weeks, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `전기기사_11주_진도표_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                showToast("현재 학습 진도가 성공적으로 백업용 파일로 저장되었습니다.", "success");
+            };
+
+            // 진도 불러오기 (JSON 업로드)
+            const handleImportProgress = (event) => {
+                const fileReader = new FileReader();
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = (e) => {
+                    try {
+                        const parsedData = JSON.parse(e.target.result);
+                        if (Array.isArray(parsedData) && parsedData.length > 0 && parsedData[0].hasOwnProperty('days')) {
+                            setWeeks(parsedData);
+                            // 첫번째 주 및 일차로 초기 선택
+                            setSelectedWeek(parsedData[0].id);
+                            setSelectedDayId(parsedData[0].days[0].id);
+                            showToast("공부 진행도가 성공적으로 로드되었습니다!", "success");
+                        } else {
+                            showToast("올바르지 않은 형식의 백업 파일입니다.", "error");
+                        }
+                    } catch (error) {
+                        showToast("파일 분석에 실패했습니다.", "error");
+                    }
+                };
+            };
+
+            // 전체 완료도 계산
+            const progressStats = useMemo(() => {
+                let totalTasks = 0;
+                let completedTasks = 0;
+                weeks.forEach(w => {
+                    w.days.forEach(d => {
+                        totalTasks++;
+                        if (d.completed) completedTasks++;
+                    });
+                });
+                const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                return { total: totalTasks, completed: completedTasks, percent: percentage };
+            }, [weeks]);
+
+            // 단계별 완료도
+            const phaseStats = useMemo(() => {
+                const stats = { 1: { t: 0, c: 0 }, 2: { t: 0, c: 0 }, 3: { t: 0, c: 0 } };
+                weeks.forEach(w => {
+                    w.days.forEach(d => {
+                        stats[w.phase].t++;
+                        if (d.completed) stats[w.phase].c++;
+                    });
+                });
+                return stats;
+            }, [weeks]);
+
+            // 특정 일차 선택 핸들러
+            const handleSelectDay = (weekId, dayId) => {
+                setSelectedWeek(weekId);
+                setSelectedDayId(dayId);
+            };
+
+            // 특정 일차 토글 완료 핸들러
+            const toggleDayCompleted = (weekId, dayId) => {
+                setWeeks(prevWeeks => {
+                    return prevWeeks.map(w => {
+                        if (w.id === weekId) {
+                            return {
+                                ...w,
+                                days: w.days.map(d => {
+                                    if (d.id === dayId) {
+                                        const nextState = !d.completed;
+                                        if (nextState) {
+                                            showToast(`${d.name} 학습 완료 완료! 💪`, "success");
+                                        }
+                                        return { ...d, completed: nextState };
+                                    }
+                                    return d;
+                                })
+                            };
+                        }
+                        return w;
+                    });
+                });
+            };
+
+            // 특정 일차 메모 저장
+            const handleSaveDayNotes = (weekId, dayId, noteText) => {
+                setWeeks(prevWeeks => {
+                    return prevWeeks.map(w => {
+                        if (w.id === weekId) {
+                            return {
+                                ...w,
+                                days: w.days.map(d => {
+                                    if (d.id === dayId) {
+                                        return { ...d, notes: noteText };
+                                    }
+                                    return d;
+                                })
+                            };
+                        }
+                        return w;
+                    });
+                });
+            };
+
+            // 현재 선택된 일차 데이터
+            const currentSelectedDay = useMemo(() => {
+                const currentWeek = weeks.find(w => w.id === selectedWeek);
+                if (currentWeek) {
+                    return currentWeek.days.find(d => d.id === selectedDayId);
+                }
+                return null;
+            }, [weeks, selectedWeek, selectedDayId]);
+
+            return (
+                <div class="flex-grow flex flex-col md:flex-row h-screen overflow-hidden text-slate-100 relative">
+                    
+                    {/* 커스텀 토스트 알림창 */}
+                    {toast.show && (
+                        <div class="absolute top-5 right-5 z-50 flex items-center p-4 rounded-lg shadow-lg border text-xs font-bold transition-all duration-300 animate-bounce bg-slate-800 text-slate-100 border-indigo-500/50">
+                            <span class="mr-2">
+                                {toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}
+                            </span>
+                            {toast.message}
+                        </div>
+                    )}
+
+                    {/* Left Sidebar: Progress Dashboard & Navigation */}
+                    <div class="w-full md:w-96 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
+                        
+                        {/* Profile/D-Day Area */}
+                        <div class="p-6 border-b border-slate-800 bg-gradient-to-br from-slate-900 to-indigo-950/40">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="bg-indigo-500/20 text-indigo-400 font-bold px-3 py-1 rounded-full text-xs tracking-wider">⚡ 2026 전기기사 합격</span>
+                                <span class="bg-amber-500/20 text-amber-400 font-bold px-3 py-1 rounded-full text-xs">{dDayText}</span>
+                            </div>
+                            <h1 class="text-xl font-bold text-slate-50 tracking-tight">전기기사 11주 합격 트래커</h1>
+                            <p class="text-xs text-slate-400 mt-1">시험일: 2026.08.08 (토)</p>
+                            
+                            {/* Total Progress */}
+                            <div class="mt-6">
+                                <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                    <span>전체 진도 완료율</span>
+                                    <span class="font-bold text-indigo-400">{progressStats.percent}%</span>
+                                </div>
+                                <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-indigo-500 to-cyan-400 h-2.5 rounded-full transition-all duration-500" style={{ width: `${progressStats.percent}%` }}></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                                    <span>총 {progressStats.total}일 중</span>
+                                    <span>{progressStats.completed}일 완료</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* App Tabs (2개 탭으로 정돈) */}
+                        <div class="grid grid-cols-2 border-b border-slate-800 text-xs text-center font-medium bg-slate-900/50">
+                            <button 
+                                onClick={() => setActiveTab("tracker")} 
+                                class={`py-3 transition ${activeTab === 'tracker' ? 'border-b-2 border-indigo-500 text-indigo-400 bg-slate-800/40' : 'text-slate-400 hover:text-slate-300'}`}
+                            >
+                                <i class="fa-solid fa-calendar-check mr-1"></i>계획표
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab("scratchpad")} 
+                                class={`py-3 transition ${activeTab === 'scratchpad' ? 'border-b-2 border-indigo-500 text-indigo-400 bg-slate-800/40' : 'text-slate-400 hover:text-slate-300'}`}
+                            >
+                                <i class="fa-solid fa-note-sticky mr-1"></i>종합 메모
+                            </button>
+                        </div>
+
+                        {/* Sidebar Dynamic Content based on Tab */}
+                        <div class="flex-grow p-4 animate-fade-in">
+                            {activeTab === 'tracker' && (
+                                <div class="space-y-4">
+                                    {/* Phase filter */}
+                                    <div>
+                                        <label class="text-[10px] uppercase font-bold text-slate-500 tracking-wider font-semibold">단계 필터</label>
+                                        <div class="grid grid-cols-4 gap-1 mt-1 text-[11px]">
+                                            <button 
+                                                onClick={() => setSelectedPhase("all")} 
+                                                class={`py-1.5 px-1 rounded text-center transition ${selectedPhase === 'all' ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-750'}`}
+                                            >전체</button>
+                                            <button 
+                                                onClick={() => setSelectedPhase("1")} 
+                                                class={`py-1.5 px-1 rounded text-center transition ${selectedPhase === '1' ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-750'}`}
+                                            >1단계</button>
+                                            <button 
+                                                onClick={() => setSelectedPhase("2")} 
+                                                class={`py-1.5 px-1 rounded text-center transition ${selectedPhase === '2' ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-750'}`}
+                                            >2단계</button>
+                                            <button 
+                                                onClick={() => setSelectedPhase("3")} 
+                                                class={`py-1.5 px-1 rounded text-center transition ${selectedPhase === '3' ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-750'}`}
+                                            >3단계</button>
+                                        </div>
+                                    </div>
+
+                                    {/* Backup Options */}
+                                    <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-800">
+                                        <p class="text-[11px] text-slate-400 mb-2">💾 진행한 공부 내역을 컴퓨터에 안전하게 백업하거나 가져올 수 있습니다.</p>
+                                        <div class="flex gap-2 text-xs">
+                                            <button onClick={exportProgress} class="flex-1 py-1 px-2 bg-slate-700 hover:bg-slate-650 rounded text-slate-300 transition flex items-center justify-center gap-1">
+                                                <i class="fa-solid fa-file-export"></i>백업 저장
+                                            </button>
+                                            <label class="flex-1 py-1 px-2 bg-slate-700 hover:bg-slate-650 rounded text-slate-300 transition flex items-center justify-center gap-1 cursor-pointer text-center">
+                                                <i class="fa-solid fa-file-import"></i>가져오기
+                                                <input type="file" accept=".json" onChange={handleImportProgress} class="hidden" />
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Phase Progress Card */}
+                                    <div class="space-y-2 text-xs text-slate-400">
+                                        <div class="p-2.5 bg-slate-800/30 rounded-lg flex justify-between items-center">
+                                            <span>📘 1단계 치트키 기본서</span>
+                                            <span class="font-bold text-slate-200">{Math.round((phaseStats[1].c / (phaseStats[1].t || 1)) * 100)}% ({phaseStats[1].c}/{phaseStats[1].t})</span>
+                                        </div>
+                                        <div class="p-2.5 bg-slate-800/30 rounded-lg flex justify-between items-center">
+                                            <span>📙 2단계 타우(τ) 유형집</span>
+                                            <span class="font-bold text-slate-200">{Math.round((phaseStats[2].c / (phaseStats[2].t || 1)) * 100)}% ({phaseStats[2].c}/{phaseStats[2].t})</span>
+                                        </div>
+                                        <div class="p-2.5 bg-slate-800/30 rounded-lg flex justify-between items-center">
+                                            <span>📝 3단계 최종 모의고사</span>
+                                            <span class="font-bold text-slate-200">{Math.round((phaseStats[3].c / (phaseStats[3].t || 1)) * 100)}% ({phaseStats[3].c}/{phaseStats[3].t})</span>
+                                        </div>
+                                    </div>
+
+                                    {/* 3중 복습 가이드 퀵 링크 */}
+                                    <div class="bg-indigo-950/20 border border-indigo-900/50 p-3 rounded-lg text-xs">
+                                        <h3 class="font-bold text-indigo-400 mb-1"><i class="fa-solid fa-rotate-right mr-1"></i>3중 누적 복습법 핵심 가이드</h3>
+                                        <ul class="space-y-1.5 text-slate-400 text-[11px] list-disc list-inside">
+                                            <li><b class="text-slate-300">매일 아침 10분:</b> 전날 진도 눈도장</li>
+                                            <li><b class="text-slate-300">금요일 리뷰데이:</b> 새로운 진도 없이 이번 주 분량 전체 가볍게 형광펜 정독</li>
+                                            <li><b class="text-slate-300">타우 역방향 매칭:</b> 문제집을 풀며 기억 안 나는 개념은 기본서로 연동</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'scratchpad' && (
+                                <div class="space-y-3">
+                                    <label class="text-[11px] uppercase font-bold text-slate-400 tracking-wider">종합 학습 메모장</label>
+                                    <p class="text-[11px] text-slate-500">눈으로 요점 공부하면서 꼭 기억해야 하는 식이나 중요 암기 수치를 편하게 낙서해 두세요.</p>
+                                    <textarea 
+                                        value={scratchpadText}
+                                        onChange={(e) => setScratchpadText(e.target.value)}
+                                        placeholder="예: RLC 직렬 임피던스 합성식, 동기발전기 병렬 운전 조건 (기주파위) 등 언제나 빠르게 볼 수 있도록 메모하세요..."
+                                        class="w-full h-96 bg-slate-800/50 border border-slate-700 rounded-lg p-3 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 font-mono resize-none"
+                                    ></textarea>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right Area: Interactive Plan Checklists */}
+                    <div class="flex-grow flex flex-col md:flex-row overflow-hidden bg-slate-950">
+                        
+                        {/* Center: List of Weeks & Days */}
+                        <div class="flex-1 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col h-full overflow-hidden">
+                            
+                            {/* Filtered Weekly List */}
+                            <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/40">
+                                <h2 class="text-sm font-bold text-slate-200"><i class="fa-regular fa-calendar-days mr-1.5"></i>전기기사 11주 정밀 코스웨어</h2>
+                                <span class="text-xs text-slate-400">주차별 펼쳐서 선택하세요</span>
+                            </div>
+
+                            <div class="flex-grow overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                                {weeks
+                                    .filter(w => selectedPhase === "all" || w.phase.toString() === selectedPhase)
+                                    .map((week) => {
+                                        // 주차별 완료율 계산
+                                        const weekCompleted = week.days.filter(d => d.completed).length;
+                                        const weekTotal = week.days.length;
+                                        const weekPercent = Math.round((weekCompleted / weekTotal) * 100);
+
+                                        return (
+                                            <div 
+                                                key={week.id} 
+                                                class={`rounded-xl border transition duration-300 overflow-hidden ${selectedWeek === week.id ? 'border-indigo-500 bg-slate-900/60' : 'border-slate-800 bg-slate-900/20'}`}
+                                            >
+                                                {/* Week Header Toggle Card */}
+                                                <div 
+                                                    onClick={() => {
+                                                        setSelectedWeek(week.id);
+                                                        setSelectedDayId(week.days[0].id);
+                                                    }}
+                                                    class="p-4 flex justify-between items-center cursor-pointer hover:bg-slate-900/40 select-none"
+                                                >
+                                                    <div class="flex-1 pr-4">
+                                                        <div class="flex items-center gap-2 mb-1">
+                                                            <span class="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">{week.phaseName}</span>
+                                                            <span class="text-[10px] text-slate-500">{week.range}</span>
+                                                        </div>
+                                                        <h3 class="font-bold text-sm text-slate-200">{week.weekTitle}</h3>
+                                                    </div>
+                                                    
+                                                    {/* Progress circle equivalent */}
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="text-right">
+                                                            <div class="text-[11px] font-bold text-indigo-400">{weekPercent}%</div>
+                                                            <div class="text-[9px] text-slate-500">{weekCompleted}/{weekTotal}일 완료</div>
+                                                        </div>
+                                                        <div class="w-2 h-10 bg-slate-800 rounded-full overflow-hidden">
+                                                            <div class="bg-indigo-500 rounded-full transition-all duration-300" style={{ height: `${weekPercent}%` }}></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Week days inside when active */}
+                                                {selectedWeek === week.id && (
+                                                    <div class="border-t border-slate-800/80 bg-slate-950/30 p-2 space-y-1.5">
+                                                        {week.days.map((day) => (
+                                                            <div 
+                                                                key={day.id}
+                                                                onClick={() => handleSelectDay(week.id, day.id)}
+                                                                class={`p-3 rounded-lg flex items-center justify-between cursor-pointer transition ${selectedDayId === day.id ? 'bg-indigo-950/40 border border-indigo-500/40 text-slate-100' : 'hover:bg-slate-900/30 text-slate-400'}`}
+                                                            >
+                                                                <div class="flex items-center gap-3 min-w-0">
+                                                                    <div 
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            toggleDayCompleted(week.id, day.id);
+                                                                        }}
+                                                                        class={`w-5 h-5 rounded flex items-center justify-center border transition shrink-0 ${day.completed ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700 hover:border-slate-500'}`}
+                                                                    >
+                                                                        {day.completed && <i class="fa-solid fa-check text-xs"></i>}
+                                                                    </div>
+                                                                    <div class="min-w-0">
+                                                                        <div class="flex items-center gap-1.5">
+                                                                            <span class={`text-[11px] font-bold ${day.completed ? 'text-emerald-400' : 'text-slate-300'}`}>{day.name}</span>
+                                                                            {day.completed && <span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-1 rounded">완료</span>}
+                                                                        </div>
+                                                                        <p class={`text-xs mt-0.5 truncate ${day.completed ? 'line-through text-slate-500' : 'text-slate-400'}`}>{day.title}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex items-center text-slate-500">
+                                                                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+                        </div>
+
+                        {/* Right: Detailed Workarea for selected Day */}
+                        <div class="w-full md:w-[420px] bg-slate-900/60 p-5 flex flex-col h-full overflow-y-auto custom-scrollbar">
+                            {currentSelectedDay ? (
+                                <div class="flex flex-col h-full space-y-4">
+                                    {/* Workarea Header */}
+                                    <div class="border-b border-slate-800 pb-4">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <span class="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">수강 상세 정보</span>
+                                                <h2 class="text-base font-bold text-slate-100 mt-2">{currentSelectedDay.name}</h2>
+                                                <p class="text-xs text-indigo-400 font-semibold mt-0.5">{currentSelectedDay.title}</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => toggleDayCompleted(selectedWeek, selectedDayId)}
+                                                class={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${currentSelectedDay.completed ? 'bg-emerald-500 hover:bg-emerald-600 text-slate-950' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'}`}
+                                            >
+                                                <i class={`fa-solid ${currentSelectedDay.completed ? 'fa-check-double' : 'fa-check'}`}></i>
+                                                {currentSelectedDay.completed ? '공부 완료' : '완료 체크'}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Checklist section */}
+                                    <div class="space-y-2">
+                                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-semibold">🎯 오늘 반드시 학습할 빈출 테마</h3>
+                                        <p class="text-[11px] text-slate-500">손목 보호를 위해 아래 개념들을 교재에서 찾아 <b class="text-indigo-400">눈으로 3초 이상 응시</b>하며 공식을 외우세요.</p>
+                                        <div class="bg-slate-950/40 rounded-xl p-3 border border-slate-800/80 space-y-2">
+                                            {currentSelectedDay.topics.map((topic, i) => (
+                                                <div key={i} class="flex items-start gap-2.5 py-1 text-xs">
+                                                    <span class="text-indigo-500 mt-0.5"><i class="fa-solid fa-circle-dot text-[9px]"></i></span>
+                                                    <span class="text-slate-200 font-medium leading-relaxed">{topic}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 3중 누적 복습 실천 약속 */}
+                                    <div class="p-3 bg-gradient-to-br from-indigo-950/20 to-slate-900 border border-indigo-900/40 rounded-xl">
+                                        <h4 class="text-xs font-bold text-indigo-400 mb-1.5"><i class="fa-solid fa-lightbulb mr-1.5"></i>오늘 실천할 핵심 누적 복습</h4>
+                                        <div class="space-y-1.5 text-[11px] text-slate-400">
+                                            <div class="flex items-center gap-1.5">
+                                                <input type="checkbox" id="rev-morning" class="rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-0 cursor-pointer" />
+                                                <label htmlFor="rev-morning" class="cursor-pointer select-none">아침 10분: 어제 봤던 공식들 눈도장 찍기 완료</label>
+                                            </div>
+                                            <div class="flex items-center gap-1.5">
+                                                <input type="checkbox" id="rev-friday" class="rounded bg-slate-800 border-slate-700 text-indigo-500 focus:ring-0 cursor-pointer" />
+                                                <label htmlFor="rev-friday" class="cursor-pointer select-none">금요일: 이번 주 진도 전체를 형광펜 중심 속독하기</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Today's Scratch Notes */}
+                                    <div class="flex-grow flex flex-col space-y-1.5">
+                                        <label class="text-xs font-bold text-slate-400">📝 오늘 한 줄 요약 및 취약 포인트 메모</label>
+                                        <textarea 
+                                            value={currentSelectedDay.notes}
+                                            onChange={(e) => handleSaveDayNotes(selectedWeek, selectedDayId, e.target.value)}
+                                            placeholder="예: 3상 평형 V결선시 공급용량 Pv = sqrt(3) * P1. 이 공식은 매 회 기출되니 무조건 외워둘 것!"
+                                            class="w-full flex-grow bg-slate-950/40 border border-slate-800 rounded-lg p-3 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 font-mono resize-none h-32 md:h-auto"
+                                        ></textarea>
+                                        <div class="text-right text-[10px] text-slate-500">
+                                            자동 입력 연동 (입력 시 해당 일차에 자동 귀속됩니다)
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div class="flex flex-col items-center justify-center h-full text-slate-500 text-center">
+                                    <i class="fa-regular fa-folder-open text-3xl mb-2"></i>
+                                    <p class="text-xs">왼쪽 계획표에서 학습할 주차와 일차를 먼저 선택해 주세요.</p>
+                                </div>
+                            )}
+                        </div>
+
+                    </div>
+                </div>
+            );
+        }
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
